@@ -1,12 +1,21 @@
 const http = require('http');
-const url = require('url');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = 3000;
 
+// ═══════════════════════════════════════════════════════
+// CONFIG — แก้ตรงนี้เพื่อ forward ไป webhook จริง
+// ═══════════════════════════════════════════════════════
+const CONFIG = {
+    // ถ้าต้องการ forward ไป n8n / Make / Zapier ให้ใส่ URL ตรงนี้
+    // forwardWebhookUrl: 'https://your-n8n.com/webhook/xxxx',
+    forwardWebhookUrl: null,
+};
+// ═══════════════════════════════════════════════════════
+
 const server = http.createServer((req, res) => {
-    // Handle CORS
+    // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -17,71 +26,89 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Webhook endpoint for Chat Widget
+    // ─── Chat Webhook ───
     if (req.url === '/chat' && req.method === 'POST') {
         let body = '';
-
-        req.on('data', chunk => {
-            body += chunk.toString();
-        });
-
-        req.on('end', () => {
+        req.on('data', chunk => body += chunk.toString());
+        req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
                 const message = data.message?.trim().toLowerCase() || '';
-
                 console.log('Received message:', message);
 
-                // Simulate image check
+                // Check if image exists locally
                 const imagesDir = path.join(__dirname, 'images');
-                let response = `❌ ไม่พบรูป: "${message}"`;
-
-                // Check if image exists
-                const extensions = ['.jpg', '.png', '.gif'];
+                const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+                let found = false;
                 for (const ext of extensions) {
-                    const imagePath = path.join(imagesDir, message + ext);
-                    if (fs.existsSync(imagePath)) {
-                        response = `✅ เพิ่มรูป: ${message}`;
+                    if (fs.existsSync(path.join(imagesDir, message + ext))) {
+                        found = true;
                         break;
                     }
                 }
 
-                res.writeHead(200, { 'Content-Type': 'text/plain' });
-                res.end(response);
+                const responseText = found
+                    ? `✅ เพิ่มรูป "${message}" ลงแกลเลอรีแล้ว!`
+                    : `❌ ไม่พบรูป "${message}" ในระบบ`;
+
+                // Optional: forward to real webhook (n8n, Make, etc.)
+                if (CONFIG.forwardWebhookUrl) {
+                    try {
+                        const { default: nodeFetch } = await import('node-fetch')
+                            .catch(() => ({ default: null }));
+
+                        if (nodeFetch) {
+                            await nodeFetch(CONFIG.forwardWebhookUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ message, source: 'automationx-gallery' }),
+                            });
+                            console.log('Forwarded to webhook:', CONFIG.forwardWebhookUrl);
+                        }
+                    } catch (fwdErr) {
+                        console.warn('Forward failed (non-critical):', fwdErr.message);
+                    }
+                }
+
+                // Return plain text so the chat widget displays it cleanly (not raw JSON)
+                res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+                res.end(responseText);
+
             } catch (error) {
                 console.error('Error:', error);
-                res.writeHead(500);
-                res.end('Error processing request');
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Error processing request' }));
             }
         });
         return;
     }
 
-    // Serve files (HTML, CSS, JS, Images, node_modules)
-    let filePath = path.join(__dirname, req.url === '/' ? 'image-gallery.html' : req.url);
-    
+    // ─── Static File Server ───
+    let requestPath = req.url === '/' ? 'image-gallery.html' : req.url;
+    requestPath = requestPath.split('?')[0]; // strip query strings
+    requestPath = requestPath.replace(/^\/+/, '');
+    const filePath = path.join(__dirname, requestPath);
+
     fs.readFile(filePath, (err, data) => {
         if (err) {
             console.log('File not found:', req.url);
-            res.writeHead(404);
-            res.end('Not found');
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('404 Not Found');
             return;
         }
-
-        // Determine content type
         const ext = path.extname(filePath).toLowerCase();
         const mimeTypes = {
-            '.html': 'text/html',
-            '.css': 'text/css',
-            '.js': 'application/javascript',
+            '.html': 'text/html; charset=utf-8',
+            '.css':  'text/css',
+            '.js':   'application/javascript',
             '.json': 'application/json',
-            '.jpg': 'image/jpeg',
+            '.jpg':  'image/jpeg',
             '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.svg': 'image/svg+xml'
+            '.png':  'image/png',
+            '.gif':  'image/gif',
+            '.webp': 'image/webp',
+            '.svg':  'image/svg+xml',
         };
-
         const contentType = mimeTypes[ext] || 'application/octet-stream';
         res.writeHead(200, { 'Content-Type': contentType });
         res.end(data);
@@ -89,8 +116,14 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`\n========================================`);
-    console.log(`🚀 AutomationX Server Running!`);
-    console.log(`📍 Open: http://localhost:${PORT}`);
-    console.log(`========================================\n`);
+    console.log(`\n${'═'.repeat(48)}`);
+    console.log(`🚀  AutomationX Gallery Server`);
+    console.log(`📍  Open: http://localhost:${PORT}`);
+    if (CONFIG.forwardWebhookUrl) {
+        console.log(`🔗  Forwarding to: ${CONFIG.forwardWebhookUrl}`);
+    } else {
+        console.log(`💡  Tip: Set forwardWebhookUrl in CONFIG to`);
+        console.log(`        connect to n8n / Make / Zapier`);
+    }
+    console.log(`${'═'.repeat(48)}\n`);
 });

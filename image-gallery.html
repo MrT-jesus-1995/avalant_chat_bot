@@ -4,270 +4,754 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutomationX Image Gallery</title>
-    <link rel="stylesheet" href="node_modules/@avalant/automationx-widgets/package/index.css">
+    <link rel="stylesheet" href="/node_modules/@avalant/automationx-widgets/index.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --brand: #667eea;
+            --brand-dark: #4f5fc8;
+            --brand-light: #8fa4f3;
+            --surface: #f0f2fb;
+            --card-bg: #ffffff;
+            --text: #1a1d2e;
+            --text-muted: #8a8fa8;
+            --shadow-sm: 0 2px 8px rgba(102,126,234,0.08);
+            --shadow-md: 0 8px 24px rgba(102,126,234,0.15);
+            --shadow-lg: 0 20px 48px rgba(102,126,234,0.22);
+            --radius: 14px;
+            --chat-w: 380px;
+            --chat-h: 560px;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #ffffff;
+            font-family: 'Sarabun', 'Segoe UI', sans-serif;
+            background: var(--surface);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 24px 24px 100px;
         }
 
+        /* ─── Page Header ─── */
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+        .page-header h1 span {
+            background: linear-gradient(135deg, var(--brand), var(--brand-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .page-header p { color: var(--text-muted); font-size: 14px; margin-top: 6px; }
+
+        /* ─── Gallery ─── */
         .gallery-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            width: 100%;
-            max-width: 1000px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            max-width: 1100px;
+            margin: 0 auto;
         }
-
         .image-card {
             position: relative;
-            border-radius: 10px;
+            border-radius: var(--radius);
             overflow: hidden;
-            background: #f0f0f0;
+            background: var(--card-bg);
             aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.25s, box-shadow 0.25s;
+            animation: fadeIn 0.4s ease both;
         }
-
-        .image-card:hover {
-            transform: scale(1.05);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.96); }
+            to   { opacity: 1; transform: none; }
         }
-
-        .image-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .image-card:hover { transform: translateY(-4px) scale(1.03); box-shadow: var(--shadow-md); }
+        .image-card img { width: 100%; height: 100%; object-fit: cover; }
+        .delete-btn {
+            position: absolute; top: 7px; right: 7px;
+            background: rgba(220,40,40,0.85); color: white;
+            border: none; width: 28px; height: 28px; border-radius: 50%;
+            cursor: pointer; font-size: 16px; display: flex;
+            align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
         }
-
-        .image-card .delete-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(255, 0, 0, 0.8);
-            color: white;
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .image-card:hover .delete-btn {
-            opacity: 1;
-        }
-
-        .image-card .delete-btn:hover {
-            background: rgba(255, 0, 0, 1);
-        }
-
+        .image-card:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { background: #e00; }
         .image-name {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 8px;
-            font-size: 12px;
-            text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(15,18,40,0.82));
+            color: white; padding: 18px 8px 8px;
+            font-size: 12px; text-align: center; font-weight: 500;
         }
-
         .empty-gallery {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 18px;
-            grid-column: 1 / -1;
-            min-height: 300px;
+            grid-column: 1 / -1; min-height: 320px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 12px; color: var(--text-muted);
+        }
+        .empty-gallery .empty-icon {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: linear-gradient(135deg, #e8eeff, #dce4ff);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px;
+        }
+        .empty-gallery p { font-size: 16px; }
+        .empty-gallery small { font-size: 13px; opacity: 0.7; text-align: center; }
+
+        /* ─── Toast ─── */
+        .toast {
+            position: fixed; top: 20px; left: 50%;
+            transform: translateX(-50%) translateY(-80px);
+            background: #1a1d2e; color: white;
+            padding: 10px 20px; border-radius: 100px;
+            font-size: 14px; z-index: 99999;
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow: var(--shadow-md);
+            pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ════════════════════════════════════
+           CUSTOM CHAT PANEL
+        ════════════════════════════════════ */
+
+        /* Floating trigger button */
+        .chat-fab {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 68px; height: 68px; border-radius: 50%;
+            cursor: pointer; z-index: 9000;
+            background: white;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.45);
+            border: 3px solid white;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease, box-shadow 0.25s;
+            animation: fabPulse 2.4s infinite;
+        }
+        .chat-fab:hover { transform: scale(1.1); }
+        .chat-fab img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .chat-fab .notif-dot {
+            position: absolute; top: 4px; right: 4px;
+            width: 13px; height: 13px;
+            background: #ff3c5a; border-radius: 50%; border: 2px solid white;
+        }
+        @keyframes fabPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(102,126,234,0.55); }
+            70%  { box-shadow: 0 0 0 16px rgba(102,126,234,0); }
+            100% { box-shadow: 0 0 0 0 rgba(102,126,234,0); }
         }
 
-        .chat-widget-container {
+        /* Chat panel */
+        .chat-panel {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
+            bottom: 104px; right: 24px;
+            width: var(--chat-w);
+            height: var(--chat-h);
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 24px 64px rgba(60,70,130,0.22);
+            display: flex; flex-direction: column;
+            z-index: 8900;
+            overflow: hidden;
+            transform: scale(0.88) translateY(24px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.28s cubic-bezier(0.34,1.42,0.64,1),
+                        opacity 0.22s ease;
         }
+        .chat-panel.open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+        /* Fullscreen mode — reset all position/size overrides from drag */
+        .chat-panel.fullscreen {
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+        }
+
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #7c8ff5);
+            padding: 14px 16px;
+            display: flex; align-items: center; gap: 12px;
+            flex-shrink: 0;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .chat-header:active { cursor: grabbing; }
+        .chat-panel.dragging { transition: none !important; }
+        .chat-header-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            object-fit: cover;
+            border: 2.5px solid rgba(255,255,255,0.7);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .chat-header-info { flex: 1; min-width: 0; }
+        .chat-header-name {
+            color: #fff; font-weight: 700; font-size: 15px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .chat-header-status {
+            font-size: 12px; color: rgba(255,255,255,0.8);
+            display: flex; align-items: center; gap: 4px; margin-top: 1px;
+        }
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .chat-header-actions { display: flex; gap: 6px; }
+        .chat-action-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,0.18);
+            border: none; cursor: pointer; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .chat-action-btn:hover { background: rgba(255,255,255,0.32); }
+        .chat-action-btn svg { width: 16px; height: 16px; fill: white; }
+
+        /* Messages area */
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 16px;
+            display: flex; flex-direction: column; gap: 10px;
+            background: #f7f8fc;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #cdd0e0; border-radius: 4px; }
+
+        /* Welcome video bubble */
+        .welcome-video-bubble {
+            background: #fff;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            overflow: hidden;
+            max-width: 280px;
+        }
+
+        /* Bubble */
+        .msg { display: flex; gap: 8px; align-items: flex-end; animation: msgIn 0.25s ease both; }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: none; }
+        }
+        .msg.user { flex-direction: row-reverse; }
+        .msg-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            object-fit: cover; flex-shrink: 0;
+        }
+        .msg-bubble {
+            max-width: 72%; padding: 10px 14px;
+            border-radius: 18px; font-size: 14px; line-height: 1.5;
+            word-break: break-word;
+        }
+        .msg.bot  .msg-bubble { background: #fff; color: #1a1d2e; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .msg.user .msg-bubble { background: linear-gradient(135deg,#667eea,#7c8ff5); color: #fff; border-bottom-right-radius: 4px; }
+        .msg-time { font-size: 10px; color: #b0b5c8; margin: 0 4px 2px; white-space: nowrap; }
+
+        /* Typing indicator */
+        .typing-dots { display: flex; gap: 4px; padding: 4px 2px; }
+        .typing-dots span {
+            width: 7px; height: 7px; border-radius: 50%; background: #b0b5c8;
+            animation: bounce 1.2s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%,80%,100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+        }
+
+        /* Input area */
+        .chat-input-area {
+            padding: 12px 14px;
+            background: #fff;
+            border-top: 1px solid #eceef6;
+            display: flex; gap: 10px; align-items: flex-end;
+            flex-shrink: 0;
+        }
+        .chat-input {
+            flex: 1; border: 1.5px solid #e0e3f0;
+            border-radius: 24px; padding: 10px 16px;
+            font-size: 14px; font-family: inherit;
+            outline: none; resize: none;
+            max-height: 100px; overflow-y: auto;
+            transition: border-color 0.2s;
+            line-height: 1.4;
+            background: #f7f8fc;
+            color: #1a1d2e;
+        }
+        .chat-input:focus { border-color: var(--brand); background: #fff; }
+        .chat-input::placeholder { color: #b0b5c8; }
+        .send-btn {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: linear-gradient(135deg,#667eea,#7c8ff5);
+            border: none; cursor: pointer; color: white;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.35);
+        }
+        .send-btn:hover { transform: scale(1.1); }
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn svg { width: 18px; height: 18px; fill: white; }
+
+        /* Powered by */
+        .chat-footer {
+            text-align: center; padding: 6px;
+            font-size: 10px; color: #c0c4d8;
+            background: #fff;
+            flex-shrink: 0;
+        }
+        .chat-footer a { color: var(--brand); text-decoration: none; }
     </style>
 </head>
 <body>
-    <div class="gallery-container" id="galleryContainer">
-        <div class="empty-gallery">กรุณาเปิด AutomationX Widgets Chat ด้านล่าง</div>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>🖼 <span>AutomationX</span> Gallery</h1>
+    <p>พิมพ์ชื่อรูปในแชทเพื่อเพิ่มลงแกลเลอรี</p>
+</div>
+
+<!-- Gallery -->
+<div class="gallery-container" id="galleryContainer">
+    <div class="empty-gallery">
+        <div class="empty-icon">🤖</div>
+        <p>แกลเลอรียังว่างอยู่</p>
+        <small>กดรูปโปรไฟล์มุมขวาล่าง<br>แล้วพิมพ์ชื่อรูป เช่น <strong>cat</strong> หรือ <strong>dog</strong></small>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════ CUSTOM CHAT PANEL ═══════════════════ -->
+<div class="chat-panel" id="chatPanel">
+
+    <!-- Header -->
+    <div class="chat-header">
+        <img class="chat-header-avatar" id="headerAvatar"
+             src="images/anu.png" alt="Assistant"
+             onerror="this.src='https://api.dicebear.com/7.x/thumbs/svg?seed=anu'">
+        <div class="chat-header-info">
+            <div class="chat-header-name" id="headerName">AI Assistant</div>
+            <div class="chat-header-status">
+                <div class="status-dot"></div>
+                <span>Online</span>
+            </div>
+        </div>
+        <div class="chat-header-actions">
+            <!-- Fullscreen toggle -->
+            <button class="chat-action-btn" id="btnFullscreen" title="เต็มหน้าจอ" onclick="toggleFullscreen()">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path id="fsIcon" d="M3 3h6v2H5v4H3V3zm12 0h6v6h-2V5h-4V3zM3 15h2v4h4v2H3v-6zm16 4h-4v2h6v-6h-2v4z"/>
+                </svg>
+            </button>
+            <!-- Close -->
+            <button class="chat-action-btn" title="ปิด" onclick="closeChat()">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.364 5.636a1 1 0 010 1.414L13.414 12l4.95 4.95a1 1 0 01-1.414 1.414L12 13.414l-4.95 4.95a1 1 0 01-1.414-1.414L10.586 12 5.636 7.05a1 1 0 011.414-1.414L12 10.586l4.95-4.95a1 1 0 011.414 0z"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
-    <div class="chat-widget-container" id="chatWidgetContainer"></div>
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages"></div>
 
-    <!-- React Dependencies -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/showdown@2.1.0/dist/showdown.min.js"></script>
+    <!-- Input -->
+    <div class="chat-input-area">
+        <textarea class="chat-input" id="chatInput"
+            placeholder="พิมพ์ข้อความ..."
+            rows="1"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+        </button>
+    </div>
 
-    <!-- AutomationX Widgets -->
-    <script src="node_modules/@avalant/automationx-widgets/package/index.umd.js"></script>
-    <script>
-        let images = [];
-        let chatWidget = null;
+    <div class="chat-footer">
+        Powered by <a href="#" target="_blank">AutomationX</a>
+    </div>
+</div>
 
-        // Monkey patch fetch to intercept messages sent to webhook
-        const originalFetch = window.fetch;
-        window.fetch = function(...args) {
-            const [resource, config] = args;
-            
-            // If this is a call to our webhook, handle it
-            if (typeof resource === 'string' && resource.includes('/chat')) {
-                const originalPromise = originalFetch.apply(this, args);
-                
-                return originalPromise.then(async (response) => {
-                    // Try to get the request body
-                    if (config && config.body) {
-                        try {
-                            const body = JSON.parse(config.body);
-                            const message = body.message?.trim().toLowerCase() || '';
-                            
-                            if (message) {
-                                console.log('User sent message:', message);
-                                // Try to load image
-                                await loadImage(message);
-                            }
-                        } catch(e) {
-                            console.log('Could not parse message:', e);
-                        }
-                    }
-                    
-                    return response;
-                });
-            }
-            
-            return originalFetch.apply(this, args);
-        };
+<!-- Floating Button -->
+<div class="chat-fab" id="chatFab" onclick="toggleChat()">
+    <img src="images/anu.png" alt="Chat"
+         style="width:100%;height:100%;object-fit:cover;display:block;"
+         onerror="this.src='https://api.dicebear.com/7.x/thumbs/svg?seed=anu'">
+    <div class="notif-dot" id="notifDot"></div>
+</div>
 
-        // Wait for widgets to load
-        setTimeout(() => {
-            console.log('Checking for chat widget...');
-            console.log('window.widgets:', window.widgets);
-            
-            const createChat = window.widgets?.createChat;
-            
-            console.log('createChat function:', createChat);
-            
-            if (typeof createChat === 'function') {
-                console.log('Creating chat widget...');
-                chatWidget = createChat({
-                    container: '#chatWidgetContainer',
-                    webhookUrl: 'http://localhost:3000/chat',
-                    title: 'AutomationX',
-                    welcomeMessage: 'สวัสดี! 👋 พิมชื่อรูปเพื่อแสดงผล',
-                    theme: {
-                        headerColor: '#667eea',
-                        headerTextColor: '#fff',
-                        backgroundColor: '#f9f9f9',
-                        userMessageColor: '#667eea',
-                        userMessageTextColor: '#fff',
-                        botMessageColor: '#e0e0e0',
-                        botMessageTextColor: '#333'
-                    }
-                });
-                console.log('Chat widget created:', chatWidget);
-            } else {
-                console.warn('createChat not found');
-            }
-        }, 1000);
+<script>
+    // ═══════════════════════════════════════════════════
+    // CONFIG
+    // ═══════════════════════════════════════════════════
+    const CONFIG = {
+        webhookUrl: 'http://localhost:3000/chat',
+        // webhookUrl: 'https://your-n8n.com/webhook/xxxx',
+        // webhookUrl: 'https://hook.eu1.make.com/xxxx',
 
-        async function loadImage(imageName) {
-            console.log('Attempting to load image:', imageName);
-            
-            try {
-                const result = await tryLoadImage(imageName, '.jpg')
-                    .catch(() => tryLoadImage(imageName, '.png'))
-                    .catch(() => tryLoadImage(imageName, '.gif'));
-                
-                console.log('Image loaded successfully:', imageName);
-            } catch (error) {
-                console.log('Image not found:', imageName, error);
-            }
+        avatarImage: 'images/anu.png',
+        botName: 'AI Assistant',
+        welcomeMessage: 'สวัสดี 👋 ยินดีต้อนรับ! พิมพ์ชื่อรูป เช่น cat หรือ dog เพื่อเพิ่มลงแกลเลอรี หรือสอบถามข้อมูลบริษัทได้เลยนะคะ',
+    };
+    // ═══════════════════════════════════════════════════
+
+    let images = [];
+    let isOpen = false;
+    let isFullscreen = false;
+    let isSending = false;
+
+    // ─── Init ───
+    window.addEventListener('load', () => {
+        appendWelcomeVideo();
+    });
+
+    // ─── Toast ───
+    function showToast(icon, msg) {
+        const t = document.getElementById('toast');
+        t.innerHTML = `${icon} ${msg}`;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    // ─── Chat open/close ───
+    function toggleChat() {
+        isOpen ? closeChat() : openChat();
+    }
+    function openChat() {
+        isOpen = true;
+        document.getElementById('chatPanel').classList.add('open');
+        document.getElementById('notifDot').style.display = 'none';
+        // Hide FAB
+        const fab = document.getElementById('chatFab');
+        fab.style.transform = 'scale(0)';
+        fab.style.opacity = '0';
+        fab.style.pointerEvents = 'none';
+        setTimeout(() => document.getElementById('chatInput').focus(), 300);
+    }
+    function closeChat() {
+        isOpen = false;
+        document.getElementById('chatPanel').classList.remove('open');
+        // Exit fullscreen too
+        if (isFullscreen) {
+            isFullscreen = false;
+            document.getElementById('chatPanel').classList.remove('fullscreen');
+            updateFsIcon(false);
         }
+        // Show FAB again
+        const fab = document.getElementById('chatFab');
+        fab.style.transform = '';
+        fab.style.opacity = '1';
+        fab.style.pointerEvents = 'auto';
+    }
 
-        function tryLoadImage(name, ext) {
-            return new Promise((resolve, reject) => {
-                const imageUrl = 'images/' + name + ext;
-                console.log('Trying to load:', imageUrl);
-                const img = new Image();
-                
-                img.onload = function() {
-                    console.log('Image found and loaded:', imageUrl);
-                    addImageToGallery(name, imageUrl);
-                    images.push({ name: name, url: imageUrl });
-                    resolve();
-                };
-                
-                img.onerror = function() {
-                    console.log('Image not found:', imageUrl);
-                    reject();
-                };
-                img.src = imageUrl;
+    // ─── Fullscreen ───
+    function toggleFullscreen() {
+        isFullscreen = !isFullscreen;
+        const panel = document.getElementById('chatPanel');
+        if (isFullscreen) {
+            // Save current drag position before going fullscreen
+            panel._savedRight  = panel.style.right;
+            panel._savedBottom = panel.style.bottom;
+            // Clear inline drag styles so CSS !important takes over
+            panel.style.removeProperty('right');
+            panel.style.removeProperty('bottom');
+            panel.style.removeProperty('left');
+            panel.style.removeProperty('top');
+        } else {
+            // Restore saved drag position (or default)
+            panel.style.right  = panel._savedRight  || '24px';
+            panel.style.bottom = panel._savedBottom || '104px';
+        }
+        panel.classList.toggle('fullscreen', isFullscreen);
+        updateFsIcon(isFullscreen);
+    }
+    function updateFsIcon(full) {
+        document.getElementById('fsIcon').setAttribute('d',
+            full
+            ? 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z'
+            : 'M3 3h6v2H5v4H3V3zm12 0h6v6h-2V5h-4V3zM3 15h2v4h4v2H3v-6zm16 4h-4v2h6v-6h-2v4z'
+        );
+    }
+
+    // ─── Auto resize textarea ───
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+    }
+    function handleKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    // ─── Append messages ───
+    function appendWelcomeVideo() {
+        appendBotMessage(CONFIG.welcomeMessage);
+    }
+
+    function appendBotMessage(text) {
+        const messages = document.getElementById('chatMessages');
+        const avatarSrc = CONFIG.avatarImage;
+        const now = new Date().toLocaleTimeString('th', { hour: '2-digit', minute: '2-digit' });
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `
+            <img class="msg-avatar" src="${avatarSrc}"
+                 onerror="this.src='https://api.dicebear.com/7.x/thumbs/svg?seed=anu'" alt="">
+            <div>
+                <div class="msg-bubble">${text}</div>
+                <div class="msg-time">${now}</div>
+            </div>`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function appendUserMessage(text) {
+        const messages = document.getElementById('chatMessages');
+        const now = new Date().toLocaleTimeString('th', { hour: '2-digit', minute: '2-digit' });
+        const div = document.createElement('div');
+        div.className = 'msg user';
+        div.innerHTML = `
+            <div>
+                <div class="msg-bubble">${escHtml(text)}</div>
+                <div class="msg-time">${now}</div>
+            </div>`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showTyping() {
+        const messages = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'msg bot'; div.id = 'typingMsg';
+        const avatarSrc = CONFIG.avatarImage;
+        div.innerHTML = `
+            <img class="msg-avatar" src="${avatarSrc}"
+                 onerror="this.src='https://api.dicebear.com/7.x/thumbs/svg?seed=anu'" alt="">
+            <div class="msg-bubble">
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+    function hideTyping() {
+        document.getElementById('typingMsg')?.remove();
+    }
+
+    function escHtml(t) {
+        return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ─── Send Message ───
+    async function sendMessage() {
+        if (isSending) return;
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        isSending = true;
+        input.value = '';
+        input.style.height = 'auto';
+
+        appendUserMessage(text);
+        showTyping();
+
+        // Try to load image in gallery
+        await loadImage(text.toLowerCase());
+
+        // Call webhook
+        try {
+            const res = await fetch(CONFIG.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text }),
             });
-        }
 
-        function addImageToGallery(name, url) {
-            const gallery = document.getElementById('galleryContainer');
-            
-            // Remove empty message if exists
-            const emptyMsg = gallery.querySelector('.empty-gallery');
-            if (emptyMsg) {
-                emptyMsg.remove();
+            let reply = '';
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+                const json = await res.json();
+                reply = json.response || json.text || json.message || json.output || JSON.stringify(json);
+            } else {
+                reply = await res.text();
             }
 
-            const imageCard = document.createElement('div');
-            imageCard.className = 'image-card';
-            imageCard.dataset.imageName = name;
-            imageCard.innerHTML = `
-                <img src="${url}" alt="${name}">
-                <div class="image-name">${name}</div>
-                <button class="delete-btn" onclick="deleteImage('${name}')">×</button>
-            `;
-            gallery.appendChild(imageCard);
+            hideTyping();
+            appendBotMessage(reply || '...');
+
+        } catch (err) {
+            hideTyping();
+            appendBotMessage('❌ ไม่สามารถเชื่อมต่อ server ได้ กรุณาลองใหม่');
+            console.error('Webhook error:', err);
         }
 
-        function deleteImage(name) {
-            const gallery = document.getElementById('galleryContainer');
-            const card = gallery.querySelector(`[data-image-name="${name}"]`);
-            if (card) {
-                card.remove();
-                images = images.filter(img => img.name !== name);
+        isSending = false;
+        input.focus();
+    }
 
-                // Show empty message if no images
-                if (images.length === 0) {
-                    gallery.innerHTML = '<div class="empty-gallery">กรุณาเปิด AutomationX Widgets Chat ด้านล่าง</div>';
+    // ─── Load Image ───
+    async function loadImage(name) {
+        const exts = ['.jpg','.jpeg','.png','.gif','.webp'];
+        for (const ext of exts) {
+            try { await tryLoadImage(name, ext); return; } catch(_) {}
+        }
+    }
+    function tryLoadImage(name, ext) {
+        return new Promise((resolve, reject) => {
+            const url = 'images/' + name + ext;
+            const img = new Image();
+            img.onload = () => {
+                if (!images.find(i => i.name === name)) {
+                    addImageToGallery(name, url);
+                    images.push({ name, url });
+                    showToast('🖼', `เพิ่มรูป: ${name}`);
                 }
+                resolve();
+            };
+            img.onerror = reject;
+            img.src = url;
+        });
+    }
+
+    // ─── Gallery ───
+    function addImageToGallery(name, url) {
+        const g = document.getElementById('galleryContainer');
+        g.querySelector('.empty-gallery')?.remove();
+        const card = document.createElement('div');
+        card.className = 'image-card';
+        card.dataset.imageName = name;
+        card.innerHTML = `
+            <img src="${url}" alt="${name}" loading="lazy">
+            <div class="image-name">${name}</div>
+            <button class="delete-btn" onclick="deleteImage('${name}')" title="ลบ">×</button>`;
+        g.appendChild(card);
+    }
+    function deleteImage(name) {
+        const g = document.getElementById('galleryContainer');
+        const card = g.querySelector(`[data-image-name="${name}"]`);
+        if (!card) return;
+        card.style.transition = 'opacity 0.25s, transform 0.25s';
+        card.style.opacity = '0'; card.style.transform = 'scale(0.85)';
+        setTimeout(() => {
+            card.remove();
+            images = images.filter(i => i.name !== name);
+            if (!images.length) {
+                g.innerHTML = `<div class="empty-gallery">
+                    <div class="empty-icon">🤖</div>
+                    <p>แกลเลอรียังว่างอยู่</p>
+                    <small>กดรูปโปรไฟล์มุมขวาล่าง แล้วพิมพ์ชื่อรูป</small>
+                </div>`;
             }
+            showToast('🗑', `ลบรูป: ${name}`);
+        }, 250);
+    }
+
+    // ─── Drag to move chat panel ───
+    (function () {
+        const panel = document.getElementById('chatPanel');
+        const header = panel.querySelector('.chat-header');
+
+        let isDragging = false;
+        let startX, startY, startRight, startBottom;
+
+        header.addEventListener('mousedown', onDragStart);
+        header.addEventListener('touchstart', onDragStart, { passive: true });
+
+        function onDragStart(e) {
+            // Don't drag when clicking buttons
+            if (e.target.closest('.chat-action-btn')) return;
+            // Don't drag in fullscreen
+            if (panel.classList.contains('fullscreen')) return;
+
+            isDragging = true;
+            panel.classList.add('dragging');
+
+            const rect = panel.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // Store start cursor pos and panel's current right/bottom (since we use those in CSS)
+            startX = clientX;
+            startY = clientY;
+            startRight  = window.innerWidth  - rect.right;
+            startBottom = window.innerHeight - rect.bottom;
+
+            // Switch from CSS var sizing to explicit px so we can move freely
+            panel.style.right  = startRight  + 'px';
+            panel.style.bottom = startBottom + 'px';
+            panel.style.left   = 'auto';
+            panel.style.top    = 'auto';
+
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup',   onDragEnd);
+            document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('touchend',  onDragEnd);
         }
 
-        window.addEventListener('load', function() {
-            console.log('Image Gallery loaded. AutomationX Widgets ready!');
-        });
-    </script>
+        function onDragMove(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+
+            const panelW = panel.offsetWidth;
+            const panelH = panel.offsetHeight;
+            const newRight  = Math.max(0, Math.min(window.innerWidth  - panelW,  startRight  - dx));
+            const newBottom = Math.max(0, Math.min(window.innerHeight - panelH,  startBottom - dy));
+
+            panel.style.right  = newRight  + 'px';
+            panel.style.bottom = newBottom + 'px';
+        }
+
+        function onDragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            panel.classList.remove('dragging');
+
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup',   onDragEnd);
+            document.removeEventListener('touchmove', onDragMove);
+            document.removeEventListener('touchend',  onDragEnd);
+        }
+    })();
+
+</script>
 </body>
 </html>
