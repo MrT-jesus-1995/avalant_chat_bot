@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@avalant/automationx-widgets": "^0.0.17"
+  }
+}

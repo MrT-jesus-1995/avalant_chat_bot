@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutomationX Image Gallery</title>
+    <link rel="stylesheet" href="node_modules/@avalant/automationx-widgets/package/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .image-card {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f0f0f0;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .image-card:hover {
+            transform: scale(1.05);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-card .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .image-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .image-card .delete-btn:hover {
+            background: rgba(255, 0, 0, 1);
+        }
+
+        .image-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px;
+            font-size: 12px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .empty-gallery {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+            grid-column: 1 / -1;
+            min-height: 300px;
+        }
+
+        .chat-widget-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery-container" id="galleryContainer">
+        <div class="empty-gallery">กรุณาเปิด AutomationX Widgets Chat ด้านล่าง</div>
+    </div>
+
+    <div class="chat-widget-container" id="chatWidgetContainer"></div>
+
+    <!-- React Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/showdown@2.1.0/dist/showdown.min.js"></script>
+
+    <!-- AutomationX Widgets -->
+    <script src="node_modules/@avalant/automationx-widgets/package/index.umd.js"></script>
+    <script>
+        let images = [];
+        let chatWidget = null;
+
+        // Monkey patch fetch to intercept messages sent to webhook
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            const [resource, config] = args;
+            
+            // If this is a call to our webhook, handle it
+            if (typeof resource === 'string' && resource.includes('/chat')) {
+                const originalPromise = originalFetch.apply(this, args);
+                
+                return originalPromise.then(async (response) => {
+                    // Try to get the request body
+                    if (config && config.body) {
+                        try {
+                            const body = JSON.parse(config.body);
+                            const message = body.message?.trim().toLowerCase() || '';
+                            
+                            if (message) {
+                                console.log('User sent message:', message);
+                                // Try to load image
+                                await loadImage(message);
+                            }
+                        } catch(e) {
+                            console.log('Could not parse message:', e);
+                        }
+                    }
+                    
+                    return response;
+                });
+            }
+            
+            return originalFetch.apply(this, args);
+        };
+
+        // Wait for widgets to load
+        setTimeout(() => {
+            console.log('Checking for chat widget...');
+            console.log('window.widgets:', window.widgets);
+            
+            const createChat = window.widgets?.createChat;
+            
+            console.log('createChat function:', createChat);
+            
+            if (typeof createChat === 'function') {
+                console.log('Creating chat widget...');
+                chatWidget = createChat({
+                    container: '#chatWidgetContainer',
+                    webhookUrl: 'http://localhost:3000/chat',
+                    title: 'AutomationX',
+                    welcomeMessage: 'สวัสดี! 👋 พิมชื่อรูปเพื่อแสดงผล',
+                    theme: {
+                        headerColor: '#667eea',
+                        headerTextColor: '#fff',
+                        backgroundColor: '#f9f9f9',
+                        userMessageColor: '#667eea',
+                        userMessageTextColor: '#fff',
+                        botMessageColor: '#e0e0e0',
+                        botMessageTextColor: '#333'
+                    }
+                });
+                console.log('Chat widget created:', chatWidget);
+            } else {
+                console.warn('createChat not found');
+            }
+        }, 1000);
+
+        async function loadImage(imageName) {
+            console.log('Attempting to load image:', imageName);
+            
+            try {
+                const result = await tryLoadImage(imageName, '.jpg')
+                    .catch(() => tryLoadImage(imageName, '.png'))
+                    .catch(() => tryLoadImage(imageName, '.gif'));
+                
+                console.log('Image loaded successfully:', imageName);
+            } catch (error) {
+                console.log('Image not found:', imageName, error);
+            }
+        }
+
+        function tryLoadImage(name, ext) {
+            return new Promise((resolve, reject) => {
+                const imageUrl = 'images/' + name + ext;
+                console.log('Trying to load:', imageUrl);
+                const img = new Image();
+                
+                img.onload = function() {
+                    console.log('Image found and loaded:', imageUrl);
+                    addImageToGallery(name, imageUrl);
+                    images.push({ name: name, url: imageUrl });
+                    resolve();
+                };
+                
+                img.onerror = function() {
+                    console.log('Image not found:', imageUrl);
+                    reject();
+                };
+                img.src = imageUrl;
+            });
+        }
+
+        function addImageToGallery(name, url) {
+            const gallery = document.getElementById('galleryContainer');
+            
+            // Remove empty message if exists
+            const emptyMsg = gallery.querySelector('.empty-gallery');
+            if (emptyMsg) {
+                emptyMsg.remove();
+            }
+
+            const imageCard = document.createElement('div');
+            imageCard.className = 'image-card';
+            imageCard.dataset.imageName = name;
+            imageCard.innerHTML = `
+                <img src="${url}" alt="${name}">
+                <div class="image-name">${name}</div>
+                <button class="delete-btn" onclick="deleteImage('${name}')">×</button>
+            `;
+            gallery.appendChild(imageCard);
+        }
+
+        function deleteImage(name) {
+            const gallery = document.getElementById('galleryContainer');
+            const card = gallery.querySelector(`[data-image-name="${name}"]`);
+            if (card) {
+                card.remove();
+                images = images.filter(img => img.name !== name);
+
+                // Show empty message if no images
+                if (images.length === 0) {
+                    gallery.innerHTML = '<div class="empty-gallery">กรุณาเปิด AutomationX Widgets Chat ด้านล่าง</div>';
+                }
+            }
+        }
+
+        window.addEventListener('load', function() {
+            console.log('Image Gallery loaded. AutomationX Widgets ready!');
+        });
+    </script>
+</body>
+</html>

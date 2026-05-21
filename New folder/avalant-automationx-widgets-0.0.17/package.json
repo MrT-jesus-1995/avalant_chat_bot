@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@avalant/automationx-widgets": "^0.0.17",
+    "showdown": "^2.1.0"
+  }
+}
