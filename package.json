@@ -1,6 +1,12 @@
 {
   "dependencies": {
     "@avalant/automationx-widgets": "^0.0.17",
+    "@langchain/classic": "^1.0.34",
+    "@langchain/community": "^1.1.28",
+    "@langchain/core": "^1.1.48",
+    "@langchain/ollama": "^1.2.7",
+    "@langchain/textsplitters": "^1.0.1",
+    "langchain": "^1.4.2",
     "showdown": "^2.1.0"
   }
 }
