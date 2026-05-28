@@ -694,7 +694,7 @@ a:focus-visible {
   top: 86px;
   left: 50%;
   min-height: 44px;
-  transform: translate(-50%, -90px);
+  transform: translate(-50%, -200px);
   display: flex;
   align-items: center;
   gap: 8px;
